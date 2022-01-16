@@ -1,0 +1,37 @@
+# Apply a cpu/memory limit to the container the app is running on by adding to "kubernetes_deployment" resource, inside the container brackets:
+
+          resources {
+            limits = {
+              cpu    = "0.5"
+              memory = "512Mi"
+            }
+            requests = {
+              cpu    = "250m"
+              memory = "50Mi"
+            }
+          }
+
+
+# Alternatively you can define a new resource to limit cpu/memory in the following way:
+
+resource "kubernetes_limit_range" "example" {
+  metadata {
+    name = "terraform-example"
+  }
+  spec {
+    limit {
+      type = "Pod"
+      max = {
+        cpu    = "200m"
+        memory = "1024Mi"
+      }
+    }
+    limit {
+      type = "Container"
+      max = {
+        cpu    = "200m"
+        memory = "1024Mi"
+      }
+    }
+  }
+}

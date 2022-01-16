@@ -1,0 +1,65 @@
+# If we want to add a specific variable with a sensitive value for all services using the existing setup with Kubernetes and Terraform only, do the following:
+	
+$ kubectl create secret docker-registry mysecret \
+ --docker-username=myusername \
+ --docker-password=mypassword \
+ --docker-email=me@example.com
+
+# then we can use these secrets in terraform, example1:
+
+resource "kubernetes_deployment" "mydeployment" {
+
+ spec {
+   template {
+     spec {
+       image_pull_secrets {
+         name  = "mysecret"
+       }
+       container {
+         image = "registry.example.com/path/to/my/container/image/master:latest"
+...
+
+# The secret sends the username and password I placed in the secret I created above to the registry to log in to pull the container.
+# I can look at the secret using the following: $ kubectl get secrets
+# to see the values of the secret: $ kubectl get secret mysecret -o json
+
+# Another way to use kubernetes secret in a terraform environment, example 2:
+
+resource "kubernetes_secret" "example" {
+  metadata {
+    name = "docker-cfg"
+  }
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "${var.registry_server}" = {
+          auth = "${base64encode("${var.registry_username}:${var.registry_password}")}"
+        }
+      }
+    })
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+}
+
+# This is equivalent to the following kubectl command: 
+# $ kubectl create secret docker-registry docker-cfg --docker-server=${registry_server} --docker-username=${registry_username} --docker-password=${registry_password}
+
+# Another option if we want to use terraform only, is to declare relevent variables as sensitive, example:
+
+variable "db_username" {
+  description = "Database administrator username"
+  type        = string
+  sensitive   = true
+}
+
+# Note: If you were to run terraform apply now, Terraform would prompt you for values for these new variables since you haven't assigned defaults to them.
+
+# Create a new file called secret.tfvars to assign values to the new variables, example:
+
+db_username = "admin"
+
+# Because we flagged the new variables as sensitive, Terraform redacts their values from its output when you run a plan, apply, or destroy command.
+# Note2: this is a less secure method an it's adviced to add some other external security option for the sensitive data.
+# For this reason, GitHub's recommended .gitignore file for Terraform configuration is configured to ignore files matching the pattern *.tfvars.

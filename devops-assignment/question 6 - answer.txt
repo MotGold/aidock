@@ -1,0 +1,26 @@
+# For a multi-environment management i will use Workspaces. in your terraform project main folder enter the command: $ terraform workspace new <environmentName>
+# repeat the command for each new environment.
+# create .tfvars files for each environment and there redefine the variables for each environment , for example, dev.tfvars:
+
+apps_info = [
+     {
+       app_name = "stream-frontend2"
+       name_label = "stream-frontend2"
+       tier_label = "web2"
+       owner_label = "product2"
+       serviceClass_annotations = "web-frontend"
+       loadBalancer_annotations = "external"
+       ingress  = "stream-backend"
+       egress   = "1.1.1.1/16"
+       port     = "8000"
+       protocol = "TCP"
+     },
+     {
+       .
+       .
+       .
+     }
+   ]
+
+# now each time we swich to dev environment variable apps_info will contain the values we defined in dev.tfvars instead of its default values.
+# repeat the process for each .tfvars of each environment 
